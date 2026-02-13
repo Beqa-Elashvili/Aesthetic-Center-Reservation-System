@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/staff", staffRoutes);
+app.use("/api/staff", staffRoutes); 
 app.use("/api/services", servicesRoutes);
 app.use("/api/reservations", reservationsRoutes);
 

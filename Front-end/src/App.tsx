@@ -3,7 +3,7 @@ import FullCalendar from "@fullcalendar/react";
 import resourceTimeGridPlugin from "@fullcalendar/resource-timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import axios from "axios";
-import Modal from "react-modal";
+import { Modal, Button, Select } from "antd";
 
 import type {
   DateSelectArg,
@@ -128,43 +128,45 @@ const SchedulePage: React.FC = () => {
         events={events}
         height="auto"
       />
-
       <Modal
-        isOpen={modalOpen}
-        onRequestClose={() => setModalOpen(false)}
-        contentLabel="Add Reservation"
-        ariaHideApp={false}
+        title="New Reservation"
+        open={modalOpen}
+        onCancel={() => setModalOpen(false)}
+        onOk={handleSave}
+        okText="Save"
+        centered
+        cancelText="Cancel"
       >
-        <h2>New Reservation</h2>
         <p>
-          Specialist:{" "}
+          <strong>Specialist:</strong>{" "}
           {specialists.find((s) => s.id === selectedSpecialist)?.name ||
             "Unknown"}
         </p>
-        <p>Date: {selectedSlot?.startStr.split("T")[0]}</p>
-        <p>Time: {selectedSlot?.startStr.split("T")[1].substring(0, 5)}</p>
 
-        <div>
-          <label>Select Services:</label>
-          <select
-            multiple
+        <p>
+          <strong>Date:</strong> {selectedSlot?.startStr.split("T")[0]}
+        </p>
+
+        <p>
+          <strong>Time:</strong>{" "}
+          {selectedSlot?.startStr.split("T")[1].substring(0, 5)}
+        </p>
+
+        <div className="mt-4">
+          <label className="block mb-2 font-medium">Select Services:</label>
+
+          <Select
+            mode="multiple"
+            style={{ width: "100%" }}
+            placeholder="Select services"
             value={selectedServices}
-            onChange={(e) =>
-              setSelectedServices(
-                Array.from(e.target.selectedOptions, (option) => option.value),
-              )
-            }
-          >
-            {services.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => setSelectedServices(value)}
+            options={services.map((s) => ({
+              label: s.name,
+              value: s.id,
+            }))}
+          />
         </div>
-
-        <button onClick={handleSave}>Save</button>
-        <button onClick={() => setModalOpen(false)}>Cancel</button>
       </Modal>
     </div>
   );

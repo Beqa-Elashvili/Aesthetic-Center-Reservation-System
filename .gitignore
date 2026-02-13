@@ -1,23 +1,23 @@
 # ==========================
 # Node modules
 # ==========================
-frontend/node_modules/
-backend/node_modules/
+Front-end/node_modules/
+Back-end/node_modules/
 
 # ==========================
 # Build outputs
 # ==========================
-frontend/dist/
-frontend/dist-ssr/
-frontend/build/
-backend/dist/
-backend/build/
+Front-end/dist/
+Front-end/dist-ssr/
+Front-end/build/
+Back-end/dist/
+Back-end/build/
 
 # ==========================
 # Environment files
 # ==========================
-frontend/.env
-backend/.env
+Front-end/.env
+Back-end/.env
 *.local
 
 # ==========================
