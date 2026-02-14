@@ -7,8 +7,6 @@ import React, {
   type SetStateAction,
   type Dispatch,
 } from "react";
-import fetchServices from "../api/FetchAllServices";
-import fetchSpecialists from "../api/FetchStaff";
 import axios from "axios";
 
 export interface TSpecialist {

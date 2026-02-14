@@ -45,7 +45,8 @@ Specialist.init(
   },
   {
     sequelize,
-    modelName: "Specialist",
-    tableName: "specialists", // optional but good practice
+    tableName: "specialists", // ✅ force correct table
+    freezeTableName: true, // ✅ prevent auto pluralization
+    timestamps: true, // optional but good practice
   },
 );

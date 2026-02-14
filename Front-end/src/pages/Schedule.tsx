@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import resourceTimeGridPlugin from "@fullcalendar/resource-timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
@@ -18,31 +18,38 @@ const SchedulePage: React.FC = () => {
   const [selectedSpecialist, setSelectedSpecialist] = useState<string>("");
 
   const { specialists, services } = useGlobalContext();
-
   const fetchReservations = async () => {
     try {
-      const res = await axios.get("/api/reservations");
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/reservations`,
+      );
+
       const eventsFromBackend: FCEventInput[] = res.data.map((r: any) => ({
         id: r.id,
-        title: r.services.map((s: any) => s.name).join(", "),
+        title: r.Services?.map((s: any) => s.name).join(", ") || "No Service",
         start: `${r.date}T${r.startTime}`,
         end: `${r.date}T${r.endTime}`,
         resourceId: r.specialistId,
-        backgroundColor: r.services[0]?.color || "#3788d8",
+        backgroundColor: r.Services?.[0]?.color || "#3788d8",
       }));
+
       setEvents(eventsFromBackend);
     } catch (err) {
       console.error(err);
     }
   };
 
+  useEffect(() => {
+    fetchReservations();
+  }, []);
+
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     setSelectedSlot(selectInfo);
     setSelectedSpecialist(selectInfo.resource?.id || "");
+    console.log(selectedSpecialist);
     setSelectedServices([]);
     setModalOpen(true);
   };
-
   const handleSave = async () => {
     if (!selectedSlot || !selectedSpecialist || selectedServices.length === 0)
       return;
@@ -59,7 +66,7 @@ const SchedulePage: React.FC = () => {
       .padStart(2, "0")}`;
 
     try {
-      await axios.post("/api/reservations", {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/reservations`, {
         date: startDate,
         startTime,
         endTime,
@@ -67,7 +74,8 @@ const SchedulePage: React.FC = () => {
         specialistId: selectedSpecialist,
         services: selectedServices,
       });
-      fetchReservations();
+
+      await fetchReservations();
       setModalOpen(false);
     } catch (err) {
       console.error(err);
@@ -95,8 +103,37 @@ const SchedulePage: React.FC = () => {
         viewClassNames={"custom-calendar-view"}
         resources={specialists?.map((s) => ({
           id: s.id,
-          title: s.firstName,
+          title: `${s.firstName} ${s.lastName}`,
+          photoUrl: s.photoUrl
+            ? `${import.meta.env.VITE_API_URL}${s.photoUrl}`
+            : null,
         }))}
+        resourceLabelContent={(arg) => {
+          const resource: any = arg.resource;
+          const photoUrl = resource.extendedProps?.photoUrl;
+
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              {photoUrl && (
+                <img
+                  src={photoUrl}
+                  alt={resource.title}
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                  }}
+                />
+              )}
+              <span
+                style={{ fontWeight: "400", fontFamily: "Arial, sans-serif" }}
+              >
+                {resource.title}
+              </span>
+            </div>
+          );
+        }}
         events={events}
         height="auto"
       />

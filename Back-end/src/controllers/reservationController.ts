@@ -1,46 +1,74 @@
 import { Request, Response } from "express";
 import { Reservation } from "@/models/reservation/Reservation";
 import { Service } from "@/models/service/Service";
+import { Specialist } from "@/models/staf/Staf";
 import { Op } from "sequelize";
 
-// Get reservations for a date
 export const getReservations = async (req: Request, res: Response) => {
-  const { date } = req.query;
-  const reservations = await Reservation.findAll({
-    where: { date },
-    include: [Service],
-    order: [["startTime", "ASC"]],
-  });
-  res.json(reservations);
+  try {
+    const { date } = req.query;
+
+    const whereCondition: any = {};
+    if (date) {
+      whereCondition.date = date;
+    }
+
+    const reservations = await Reservation.findAll({
+      where: whereCondition,
+      include: [
+        {
+          model: Service,
+          attributes: ["id", "name", "color", "type", "price"],
+        },
+        {
+          model: Specialist,
+          attributes: ["id", "firstName", "lastName", "photoUrl"],
+        },
+      ],
+      order: [
+        ["date", "ASC"],
+        ["startTime", "ASC"],
+      ],
+    });
+
+    res.json(reservations);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
-// Add reservation
+// ===== Add reservation =====
 export const addReservation = async (req: Request, res: Response) => {
   try {
     const { date, startTime, duration, specialistId, services } = req.body;
 
-    const [hours, minutes] = startTime.split(":").map(Number);
-    const endDate = new Date(date);
-    endDate.setHours(hours, minutes + duration);
-    const endTime = `${endDate.getHours().toString().padStart(2, "0")}:${endDate
-      .getMinutes()
-      .toString()
-      .padStart(2, "0")}`;
+    if (!date || !startTime || !duration || !specialistId)
+      return res.status(400).json({ message: "Missing required fields" });
 
-    // Conflict check
+    // Calculate end time
+    const startDateTime = new Date(`${date}T${startTime}`);
+    const endDateTime = new Date(startDateTime);
+    endDateTime.setMinutes(endDateTime.getMinutes() + duration);
+
+    const endTime = endDateTime.toTimeString().slice(0, 5); // HH:mm
+
+    // Check for overlapping reservations
     const conflict = await Reservation.findOne({
       where: {
         specialistId,
         date,
-        [Op.or]: [
-          { startTime: { [Op.between]: [startTime, endTime] } },
-          { endTime: { [Op.between]: [startTime, endTime] } },
+        [Op.and]: [
+          { startTime: { [Op.lt]: endTime } },
+          { endTime: { [Op.gt]: startTime } },
         ],
       },
     });
+
     if (conflict)
       return res.status(400).json({ message: "Time slot already booked" });
 
+    // Create reservation
     const reservation = await Reservation.create({
       date,
       startTime,
@@ -49,13 +77,28 @@ export const addReservation = async (req: Request, res: Response) => {
       specialistId,
     });
 
+    // Associate services if any
     if (services && services.length) {
-      await reservation.setServices(services);
+      const validServices = await Service.findAll({
+        where: { id: services },
+      });
+      await reservation.setServices(validServices);
     }
 
+    // Return the saved reservation with associations
     const savedReservation = await Reservation.findByPk(reservation.id, {
-      include: Service,
+      include: [
+        {
+          model: Service,
+          attributes: ["id", "name", "color", "type", "price"],
+        },
+        {
+          model: Specialist,
+          attributes: ["id", "firstName", "lastName", "photoUrl"],
+        },
+      ],
     });
+
     res.json(savedReservation);
   } catch (err) {
     console.error(err);
@@ -63,40 +106,87 @@ export const addReservation = async (req: Request, res: Response) => {
   }
 };
 
-// Edit reservation
+// ===== Edit reservation =====
 export const editReservation = async (req: Request, res: Response) => {
-  const { id } = req.params as { id: string };
-  const { date, startTime, duration, specialistId, services } = req.body;
-  const reservation = await Reservation.findByPk(id);
-  if (!reservation)
-    return res.status(404).json({ message: "Reservation not found" });
+  try {
+    const { id } = req.params;
+    const { date, startTime, duration, specialistId, services } = req.body;
 
-  const [hours, minutes] = startTime.split(":").map(Number);
-  const endDate = new Date(date);
-  endDate.setHours(hours, minutes + duration);
-  const endTime = `${endDate.getHours().toString().padStart(2, "0")}:${endDate
-    .getMinutes()
-    .toString()
-    .padStart(2, "0")}`;
+    const reservation = await Reservation.findByPk(id as string);
+    if (!reservation)
+      return res.status(404).json({ message: "Reservation not found" });
 
-  reservation.date = date;
-  reservation.startTime = startTime;
-  reservation.endTime = endTime;
-  reservation.duration = duration;
-  reservation.specialistId = specialistId;
-  await reservation.save();
+    // Calculate end time
+    const startDateTime = new Date(`${date}T${startTime}`);
+    const endDateTime = new Date(startDateTime);
+    endDateTime.setMinutes(endDateTime.getMinutes() + duration);
 
-  if (services && services.length) {
-    await reservation.setServices(services);
+    const endTime = endDateTime.toTimeString().slice(0, 5); // HH:mm
+
+    // Check for conflicts excluding current reservation
+    const conflict = await Reservation.findOne({
+      where: {
+        specialistId,
+        date,
+        id: { [Op.ne]: id },
+        [Op.and]: [
+          { startTime: { [Op.lt]: endTime } },
+          { endTime: { [Op.gt]: startTime } },
+        ],
+      },
+    });
+
+    if (conflict)
+      return res.status(400).json({ message: "Time slot already booked" });
+
+    // Update reservation
+    reservation.date = date;
+    reservation.startTime = startTime;
+    reservation.endTime = endTime;
+    reservation.duration = duration;
+    reservation.specialistId = specialistId;
+    await reservation.save();
+
+    // Update services
+    if (services && services.length) {
+      const validServices = await Service.findAll({
+        where: { id: services },
+      });
+      await reservation.setServices(validServices);
+    }
+
+    const updatedReservation = await Reservation.findByPk(id as string, {
+      include: [
+        {
+          model: Service,
+          attributes: ["id", "name", "color", "type", "price"],
+        },
+        {
+          model: Specialist,
+          attributes: ["id", "firstName", "lastName", "photoUrl"],
+        },
+      ],
+    });
+
+    res.json(updatedReservation);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
-
-  const updated = await Reservation.findByPk(id, { include: Service });
-  res.json(updated);
 };
 
-// Delete reservation
+// ===== Delete reservation =====
 export const deleteReservation = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  await Reservation.destroy({ where: { id } });
-  res.json({ message: "Reservation deleted" });
+  try {
+    const { id } = req.params;
+    const reservation = await Reservation.findByPk(id as string);
+    if (!reservation)
+      return res.status(404).json({ message: "Reservation not found" });
+
+    await reservation.destroy();
+    res.json({ message: "Reservation deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
 };

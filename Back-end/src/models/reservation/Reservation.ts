@@ -1,4 +1,11 @@
-import { DataTypes, Model, BelongsToManyAddAssociationsMixin } from "sequelize";
+import {
+  DataTypes,
+  Model,
+  BelongsToManyAddAssociationsMixin,
+  BelongsToManyGetAssociationsMixin,
+  BelongsToManyRemoveAssociationsMixin,
+  BelongsToManySetAssociationsMixin,
+} from "sequelize";
 import sequelize from "@/config/db";
 import { Specialist } from "../staf/Staf";
 import { Service } from "../service/Service";
@@ -10,10 +17,14 @@ export class Reservation extends Model {
   declare endTime: string;
   declare duration: number;
   declare specialistId: string;
-  declare services?: Service[];
 
-  // Add this line to type Sequelize's "setServices" helper
-  declare setServices: BelongsToManyAddAssociationsMixin<Service, string>;
+  declare services?: Service[];
+  declare specialist?: Specialist;
+
+  declare getServices: BelongsToManyGetAssociationsMixin<Service>;
+  declare addServices: BelongsToManyAddAssociationsMixin<Service, string>;
+  declare setServices: BelongsToManySetAssociationsMixin<Service, string>;
+  declare removeServices: BelongsToManyRemoveAssociationsMixin<Service, string>;
 }
 
 Reservation.init(
@@ -27,14 +38,37 @@ Reservation.init(
     startTime: { type: DataTypes.TIME, allowNull: false },
     endTime: { type: DataTypes.TIME, allowNull: false },
     duration: { type: DataTypes.INTEGER, allowNull: false },
-    specialistId: { type: DataTypes.UUID, allowNull: false },
+    specialistId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+    },
   },
-  { sequelize, tableName: "reservations" },
+  {
+    sequelize,
+    tableName: "reservations",
+    freezeTableName: true,
+    timestamps: true,
+  },
 );
 
-// Associations
-Specialist.hasMany(Reservation, { foreignKey: "specialistId" });
-Reservation.belongsTo(Specialist, { foreignKey: "specialistId" });
+// 🔥 Associations
 
-Reservation.belongsToMany(Service, { through: "ReservationServices" });
-Service.belongsToMany(Reservation, { through: "ReservationServices" });
+Specialist.hasMany(Reservation, {
+  foreignKey: "specialistId",
+  onDelete: "CASCADE",
+});
+
+Reservation.belongsTo(Specialist, {
+  foreignKey: "specialistId",
+});
+
+// Many-to-Many
+Reservation.belongsToMany(Service, {
+  through: "ReservationServices",
+  foreignKey: "reservationId",
+});
+
+Service.belongsToMany(Reservation, {
+  through: "ReservationServices",
+  foreignKey: "serviceId",
+});
