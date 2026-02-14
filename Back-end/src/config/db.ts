@@ -14,7 +14,7 @@ const sequelize = new Sequelize(process.env.DB_URL as string, {
   },
 });
 
-const syncDb = async () => {
+export const syncDb = async () => {
   try {
     await sequelize.authenticate();
     console.log("✅ Database connected");

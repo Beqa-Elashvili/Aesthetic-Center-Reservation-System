@@ -11,7 +11,6 @@ import {
 import { MdOutlineAddAPhoto } from "react-icons/md";
 import { LuCalendarDays } from "react-icons/lu";
 import { IoTimeOutline } from "react-icons/io5";
-import dayjs from "dayjs";
 
 interface Service {
   id: string;
@@ -34,13 +33,6 @@ interface ModalComponentProps {
   specialists?: Specialist[];
   services?: Service[];
 }
-
-const durations = [
-  { label: "30 minutes", value: "30" },
-  { label: "1 hour", value: "60" },
-  { label: "1.5 hours", value: "90" },
-  { label: "2 hours", value: "120" },
-];
 
 const ModalComponent: React.FC<ModalComponentProps> = ({
   type,
@@ -71,10 +63,7 @@ const ModalComponent: React.FC<ModalComponentProps> = ({
     fileList: uploadFile,
     onRemove: () => setData({ ...data, photo: null }),
   };
-
-  function moment(time: any, arg1: string): dayjs.Dayjs | null | undefined {
-    throw new Error("Function not implemented.");
-  }
+  
 
   return (
     <Modal
@@ -258,7 +247,7 @@ const ModalComponent: React.FC<ModalComponentProps> = ({
       )}
 
       {type === "staff" && (
-        <div>
+        <div style={{height: "140px"}}>
           <label>Name</label>
           <div style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
             <div>
@@ -277,7 +266,11 @@ const ModalComponent: React.FC<ModalComponentProps> = ({
                 placeholder="Enter last name"
               />
             </div>
-            <Upload style={{ height: "100%" }} {...uploadProps}>
+            <Upload
+              style={{ height: "100%" }}
+              {...uploadProps}
+              showUploadList={true}
+            >
               <Button
                 style={{
                   border: "2px dashed #173fe1",
