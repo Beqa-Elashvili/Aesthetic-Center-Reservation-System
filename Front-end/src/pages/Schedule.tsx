@@ -4,46 +4,20 @@ import resourceTimeGridPlugin from "@fullcalendar/resource-timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import axios from "axios";
 import ModalComponent from "../ModalContents/ModalContent";
-
+import { useGlobalContext } from "../providers/globalProviders";
 import type {
   DateSelectArg,
   EventInput as FCEventInput,
 } from "@fullcalendar/core";
 
-interface Specialist {
-  id: string;
-  name: string;
-}
-
-interface Service {
-  id: string;
-  name: string;
-  color?: string;
-}
-
-interface Reservation {
-  id?: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  specialistId: string;
-  services: Service[];
-}
-
-const specialists: Specialist[] = [
-  { id: "1", name: "Giorgi" },
-  { id: "2", name: "Nino" },
-  { id: "3", name: "Luka" },
-  { id: "4", name: "Mariam" },
-];
-
 const SchedulePage: React.FC = () => {
   const [events, setEvents] = useState<FCEventInput[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<DateSelectArg | null>(null);
-  const [services, setServices] = useState<Service[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [selectedSpecialist, setSelectedSpecialist] = useState<string>("");
+
+  const { specialists, services } = useGlobalContext();
 
   const fetchReservations = async () => {
     try {
@@ -61,20 +35,6 @@ const SchedulePage: React.FC = () => {
       console.error(err);
     }
   };
-
-  const fetchServices = async () => {
-    try {
-      const res = await axios.get("/api/services");
-      setServices(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // useEffect(() => {
-  //   fetchReservations();
-  //   fetchServices();
-  // }, []);
 
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     setSelectedSlot(selectInfo);
@@ -133,7 +93,10 @@ const SchedulePage: React.FC = () => {
         }}
         allDaySlot={false}
         viewClassNames={"custom-calendar-view"}
-        resources={specialists.map((s) => ({ id: s.id, title: s.name }))}
+        resources={specialists?.map((s) => ({
+          id: s.id,
+          title: s.firstName,
+        }))}
         events={events}
         height="auto"
       />

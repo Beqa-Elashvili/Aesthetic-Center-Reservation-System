@@ -4,6 +4,7 @@ import cors from "cors";
 import servicesRoutes from "./routes/servicesRoutes";
 import reservationsRoutes from "./routes/reservationsRoutes";
 import staffRoutes from "./routes/staffRoutes";
+import { syncDb } from "./config/db";
 
 const app = express();
 const PORT = process.env.PORT || 3000;

@@ -18,9 +18,13 @@ interface Service {
   color?: string;
 }
 
-interface Specialist {
+export interface specialist {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  photoUrl: string | null;
+  createdAt: string; // ISO date string
+  updatedAt: string; // ISO date string
 }
 
 interface ModalComponentProps {
@@ -30,7 +34,7 @@ interface ModalComponentProps {
   onSave: () => void;
   data: any;
   setData: (newData: any) => void;
-  specialists?: Specialist[];
+  specialists?: specialist[];
   services?: Service[];
 }
 
@@ -63,7 +67,6 @@ const ModalComponent: React.FC<ModalComponentProps> = ({
     fileList: uploadFile,
     onRemove: () => setData({ ...data, photo: null }),
   };
-  
 
   return (
     <Modal
@@ -112,7 +115,10 @@ const ModalComponent: React.FC<ModalComponentProps> = ({
               onChange={(value) =>
                 setData({ ...data, selectedSpecialist: value })
               }
-              options={specialists.map((s) => ({ label: s.name, value: s.id }))}
+              options={specialists.map((s) => ({
+                label: s.firstName,
+                value: s.id,
+              }))}
             />
           </div>
 
@@ -247,7 +253,7 @@ const ModalComponent: React.FC<ModalComponentProps> = ({
       )}
 
       {type === "staff" && (
-        <div style={{height: "140px"}}>
+        <div style={{ height: "140px" }}>
           <label>Name</label>
           <div style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
             <div>

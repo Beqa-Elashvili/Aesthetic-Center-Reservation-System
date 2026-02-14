@@ -6,6 +6,7 @@ export class Service extends Model {
   declare name: string;
   declare price: number;
   declare color: string;
+  declare type: string;
 }
 
 Service.init(
@@ -28,6 +29,11 @@ Service.init(
       type: DataTypes.STRING,
       allowNull: false,
       defaultValue: "#FF5733",
+    },
+    type: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "basic",
     },
   },
   { sequelize, tableName: "services" },

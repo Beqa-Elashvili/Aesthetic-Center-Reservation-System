@@ -2,20 +2,17 @@ import { Button, Input } from "antd";
 import { FaSearch } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import ModalComponent from "../ModalContents/ModalContent";
-import fetchStaff from "../api/staff/FetchStaff";
 import { MdOutlineEdit, MdOutlineDeleteForever } from "react-icons/md";
-
-interface Staff {
-  id: number;
-  firstName: string;
-  lastName: string;
-  photoUrl: string | null;
-}
+import {
+  useGlobalContext,
+  type TSpecialist,
+} from "../providers/globalProviders";
 
 function StaffPage() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [filteredStaff, setFilteredStaff] = useState<Staff[]>([]);
+  const [filteredStaff, setFilteredStaff] = useState<TSpecialist[]>([]);
+
+  const { specialists, fetchSpecialists } = useGlobalContext();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [staffData, setStaffData] = useState({
@@ -23,18 +20,8 @@ function StaffPage() {
     lastName: "",
     photo: null,
   });
-  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<TSpecialist | null>(null);
 
-  const fetchAllStaff = async () => {
-    const updatedStaffList = await fetchStaff();
-    setStaffList(updatedStaffList || []);
-  };
-
-  useEffect(() => {
-    fetchAllStaff();
-  }, []);
-
-  // Save function for adding new staff
   const handleAddSave = async () => {
     try {
       const formData = new FormData();
@@ -49,7 +36,7 @@ function StaffPage() {
 
       setModalOpen(false);
       setStaffData({ firstName: "", lastName: "", photo: null });
-      fetchAllStaff();
+      fetchSpecialists();
     } catch (error) {
       console.error("Error adding staff:", error);
     }
@@ -76,14 +63,13 @@ function StaffPage() {
       setModalOpen(false);
       setSelectedStaff(null);
       setStaffData({ firstName: "", lastName: "", photo: null });
-      fetchAllStaff();
+      fetchSpecialists();
     } catch (error) {
       console.error("Error editing staff:", error);
     }
   };
 
-  // Open modal for editing
-  const openEditModal = (staff: Staff) => {
+  const openEditModal = (staff: TSpecialist) => {
     setSelectedStaff(staff);
     setStaffData({
       firstName: staff.firstName,
@@ -95,13 +81,13 @@ function StaffPage() {
 
   useEffect(() => {
     if (searchTerm.length > 0) {
-      const filteredStaff = staffList.filter((staff) => {
+      const filteredStaff = specialists.filter((staff) => {
         const fullName = `${staff.firstName} ${staff.lastName}`.toLowerCase();
         return fullName.includes(searchTerm.toLowerCase());
       });
       setFilteredStaff(filteredStaff);
     } else {
-      setFilteredStaff(staffList);
+      setFilteredStaff(specialists);
     }
   }, [searchTerm]);
 
@@ -179,7 +165,7 @@ function StaffPage() {
                     `${import.meta.env.VITE_API_URL}/api/staff/${staff.id}`,
                     { method: "DELETE" },
                   );
-                  fetchAllStaff();
+                  fetchSpecialists();
                 }}
               />
             </div>
