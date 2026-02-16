@@ -18,8 +18,9 @@ const SchedulePage: React.FC = () => {
 
   const [selectedSlot, setSelectedSlot] = useState<DateSelectArg | null>(null);
   const [selectedSpecialist, setSelectedSpecialist] = useState<string>("");
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [duration, setDuration] = useState<number>(30); // duration in minutes
+  const [selectedServices, setSelectedServices] = useState<any[]>([]);
+  const [savedServices, setSavedServices] = useState<any[]>([]);
+  const [duration, setDuration] = useState<number>(30);
   const [editingReservationId, setEditingReservationId] = useState<
     string | null
   >(null);
@@ -55,7 +56,8 @@ const SchedulePage: React.FC = () => {
     setSelectedSlot(selectInfo);
     setSelectedSpecialist(selectInfo.resource?.id || "");
     setSelectedServices([]);
-    setDuration(30); // default duration
+    setSavedServices([]);
+    setDuration(30);
     setModalOpen(true);
   };
 
@@ -67,7 +69,8 @@ const SchedulePage: React.FC = () => {
 
     setEditingReservationId(event.id as string);
     setSelectedSpecialist(r.specialistId);
-    setSelectedServices(r.services || []);
+    setSelectedServices([]);
+    setSavedServices(r.Services || []);
     setDuration(r.duration || 30);
     setSelectedSlot({
       startStr: `${r.date}T${r.startTime}`,
@@ -79,8 +82,7 @@ const SchedulePage: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!selectedSlot || !selectedSpecialist || selectedServices.length === 0)
-      return;
+    if (!selectedSlot || !selectedSpecialist) return;
 
     const startDate = selectedSlot.startStr.split("T")[0];
     const [startHour, startMinute] = selectedSlot.startStr
@@ -89,7 +91,7 @@ const SchedulePage: React.FC = () => {
       .split(":")
       .map(Number);
 
-    // calculate endTime from start + duration
+    // calculate endTime
     const endTotalMinutes = startHour * 60 + startMinute + duration;
     const endHour = Math.floor(endTotalMinutes / 60);
     const endMinute = endTotalMinutes % 60;
@@ -97,26 +99,36 @@ const SchedulePage: React.FC = () => {
       .toString()
       .padStart(2, "0")}`;
 
+    // send only service IDs
+    const allServiceIds = [
+      ...savedServices.map((s) => s.id),
+      ...selectedServices,
+    ];
+
     try {
       if (editingReservationId) {
         await axios.put(
           `${import.meta.env.VITE_API_URL}/api/reservations/${editingReservationId}`,
           {
             date: startDate,
-            startTime: `${startHour.toString().padStart(2, "0")}:${startMinute.toString().padStart(2, "0")}`,
+            startTime: `${startHour.toString().padStart(2, "0")}:${startMinute
+              .toString()
+              .padStart(2, "0")}`,
             endTime,
             specialistId: selectedSpecialist,
-            services: selectedServices,
+            services: allServiceIds, // only IDs
             duration,
           },
         );
       } else {
         await axios.post(`${import.meta.env.VITE_API_URL}/api/reservations`, {
           date: startDate,
-          startTime: `${startHour.toString().padStart(2, "0")}:${startMinute.toString().padStart(2, "0")}`,
+          startTime: `${startHour.toString().padStart(2, "0")}:${startMinute
+            .toString()
+            .padStart(2, "0")}`,
           endTime,
           specialistId: selectedSpecialist,
-          services: selectedServices,
+          services: allServiceIds, // only IDs
           duration,
         });
       }
@@ -126,6 +138,7 @@ const SchedulePage: React.FC = () => {
       setSelectedSlot(null);
       setSelectedSpecialist("");
       setSelectedServices([]);
+      setSavedServices([]);
       setDuration(30);
       await fetchReservations();
     } catch (err) {
@@ -189,13 +202,20 @@ const SchedulePage: React.FC = () => {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
-        data={{ selectedSpecialist, selectedSlot, selectedServices, duration }}
+        data={{
+          selectedSpecialist,
+          selectedSlot,
+          selectedServices,
+          savedServices,
+          duration,
+        }}
         setData={(newData) => {
           setSelectedSpecialist(
             newData.selectedSpecialist ?? selectedSpecialist,
           );
           setSelectedSlot(newData.selectedSlot ?? selectedSlot);
           setSelectedServices(newData.selectedServices ?? selectedServices);
+          setSavedServices(newData.savedServices ?? savedServices);
           setDuration(newData.duration ?? duration);
         }}
         specialists={specialists}

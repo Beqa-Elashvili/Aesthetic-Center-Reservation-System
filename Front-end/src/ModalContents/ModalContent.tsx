@@ -11,6 +11,7 @@ import {
 import { MdOutlineAddAPhoto } from "react-icons/md";
 import { LuCalendarDays } from "react-icons/lu";
 import { IoTimeOutline } from "react-icons/io5";
+import { useGlobalContext } from "../providers/globalProviders";
 
 interface Service {
   id: string;
@@ -23,8 +24,8 @@ export interface specialist {
   firstName: string;
   lastName: string;
   photoUrl: string | null;
-  createdAt: string; // ISO date string
-  updatedAt: string; // ISO date string
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface ModalComponentProps {
@@ -106,75 +107,175 @@ const ModalComponent: React.FC<ModalComponentProps> = ({
     >
       {type === "reservation" && (
         <div>
-          <label>Specialist</label>
-          <Select
-            style={{ width: "100%", marginBottom: 16 }}
-            placeholder="Select specialist"
-            value={data.selectedSpecialist}
-            onChange={(value) =>
-              setData({ ...data, selectedSpecialist: value })
-            }
-            options={specialists.map((s) => ({
-              label: s.firstName,
-              value: s.id,
-            }))}
-          />
+          <div>
+            <label>Name</label>
+            <Select
+              style={{ width: "100%" }}
+              placeholder="Select specialist"
+              value={data.selectedSpecialist}
+              onChange={(value) =>
+                setData({ ...data, selectedSpecialist: value })
+              }
+              options={specialists.map((s) => ({
+                label: s.firstName,
+                value: s.id,
+              }))}
+            />
+          </div>
 
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              gap: "20px",
-              marginBottom: 16,
+              gap: "30px",
             }}
           >
-            <div style={{ flex: 1 }}>
+            <div style={{ width: "100%" }}>
               <label>Date</label>
               <div className="new-Reservation-btn">
                 <LuCalendarDays className="icon" />
-                {data.selectedSlot?.startStr?.split("T")[0]}
+                {data.selectedSlot?.startStr
+                  .split("T")[0]
+                  .split("-")
+                  .reverse()
+                  .map((part: any, index: number) =>
+                    index === 2 ? part.slice(2) : part,
+                  )
+                  .join(".")}
               </div>
             </div>
-            <div style={{ flex: 1 }}>
-              <label>Start Time</label>
+            <div style={{ width: "100%" }}>
+              <label>Appt Time </label>
               <div className="new-Reservation-btn">
                 <IoTimeOutline className="icon" />
-                {data.selectedSlot?.startStr?.split("T")[1].substring(0, 5)}
+                {data.selectedSlot?.startStr.split("T")[1].substring(0, 5)}
               </div>
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ width: "100%" }}>
               <label>Duration</label>
               <div className="new-Reservation-btn">
                 <IoTimeOutline className="icon" />
                 <Select
-                  style={{
-                    width: "100%",
-                    height: "22.5px",
-                    border: "none",
-                    outline: "none",
-                    boxShadow: "none",
-                  }}
-                  placeholder="Select duration"
                   value={data.duration}
                   onChange={(value) => setData({ ...data, duration: value })}
-                  options={[
-                    { label: "30 min", value: 30 },
-                    { label: "60 min", value: 60 },
-                  ]}
-                />
+                  style={{ width: "100%" }}
+                >
+                  <Select.Option value={30}>30 min</Select.Option>
+                  <Select.Option value={60}>60 min</Select.Option>
+                </Select>
               </div>
             </div>
           </div>
 
-          <label>Services</label>
-          <Select
-            mode="multiple"
-            style={{ width: "100%" }}
-            placeholder="Select services"
-            value={data.selectedServices}
-            onChange={(value) => setData({ ...data, selectedServices: value })}
-            options={services.map((s) => ({ label: s.name, value: s.id }))}
-          />
+          <hr style={{ marginBlock: "14px" }} />
+
+          <div>
+            <label>Services</label>
+            <Select
+              mode="multiple"
+              style={{ width: "100%" }}
+              placeholder="Select services"
+              value={data.selectedServices}
+              onChange={(value) =>
+                setData({ ...data, selectedServices: value })
+              }
+              showSearch
+              optionFilterProp="label"
+              filterOption={(input, option) =>
+                (option?.label as string)
+                  .toLowerCase()
+                  .includes(input.toLowerCase())
+              }
+              options={services
+                .filter(
+                  (s) =>
+                    !data.savedServices?.some(
+                      (saved: any) => saved.id === s.id,
+                    ),
+                )
+                .map((s) => ({ label: s.name, value: s.id }))}
+            />
+
+            {data.savedServices?.length > 0 && (
+              <div className="reserve_select_style">
+                {data.savedServices.map((s: any) => (
+                  <span
+                    className="item"
+                    key={s.id}
+                    style={{
+                      backgroundColor: s.color || "#ccc",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "4px 8px",
+                      borderRadius: "4px",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    {s.name}
+                    <span
+                      style={{
+                        marginLeft: "8px",
+                        cursor: "pointer",
+                        fontWeight: "bold",
+                      }}
+                      onClick={() => {
+                        setData({
+                          ...data,
+                          savedServices: data.savedServices.filter(
+                            (saved: any) => saved.id !== s.id,
+                          ),
+                        });
+                      }}
+                    >
+                      ×
+                    </span>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {data.selectedServices?.length > 0 && (
+              <div className="reserve_select_style">
+                {services
+                  .filter((s) => data.selectedServices.includes(s.id))
+                  .map((s) => (
+                    <span
+                      className="item"
+                      key={s.id}
+                      style={{
+                        backgroundColor: s.color || "#aaa",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      {s.name}
+                      <span
+                        style={{
+                          marginLeft: "8px",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                        }}
+                        onClick={() => {
+                          setData({
+                            ...data,
+                            selectedServices: data.selectedServices.filter(
+                              (id: string) => id !== s.id,
+                            ),
+                          });
+                        }}
+                      >
+                        ×
+                      </span>
+                    </span>
+                  ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
