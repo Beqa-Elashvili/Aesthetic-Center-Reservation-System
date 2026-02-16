@@ -11,7 +11,7 @@ const SchedulePage: React.FC = () => {
   const { specialists, services } = useGlobalContext();
 
   const [modalOpen, setModalOpen] = useState(false);
-  const { fetchReservations, events, setEvents } = useGlobalContext();
+  const { fetchReservations, events } = useGlobalContext();
 
   const [selectedSlot, setSelectedSlot] = useState<DateSelectArg | null>(null);
   const [selectedSpecialist, setSelectedSpecialist] = useState<string>("");
@@ -71,7 +71,10 @@ const SchedulePage: React.FC = () => {
       .toString()
       .padStart(2, "0")}`;
 
-    // send only service IDs
+    if (selectedServices.length === 0 && savedServices.length === 0) {
+      alert("please select services !");
+      return;
+    }
     const allServiceIds = [
       ...savedServices.map((s) => s.id),
       ...selectedServices,

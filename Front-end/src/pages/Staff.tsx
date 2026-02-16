@@ -11,7 +11,6 @@ import {
 function StaffPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [filteredStaff, setFilteredStaff] = useState<TSpecialist[]>([]);
-
   const { specialists, fetchSpecialists } = useGlobalContext();
 
   const [searchTerm, setSearchTerm] = useState("");

@@ -8,7 +8,6 @@ import {
   type UploadProps,
   type UploadFile,
   Popconfirm,
-  type PopconfirmProps,
 } from "antd";
 import { MdOutlineAddAPhoto } from "react-icons/md";
 import { LuCalendarDays } from "react-icons/lu";
@@ -40,8 +39,8 @@ interface ModalComponentProps {
   setData: (newData: any) => void;
   specialists?: specialist[];
   services?: Service[];
-  editingReservationId?: string; // add editing reservation id
-  fetchReservations?: () => void; // optional refresh function
+  editingReservationId?: string;
+  fetchReservations?: () => void;
 }
 
 const ModalComponent: React.FC<ModalComponentProps> = ({
@@ -104,9 +103,6 @@ const ModalComponent: React.FC<ModalComponentProps> = ({
     );
 
     return (savedPrice || 0) + (selectedPrice || 0);
-  };
-  const cancel: PopconfirmProps["onCancel"] = (e) => {
-    console.log(e);
   };
 
   return (

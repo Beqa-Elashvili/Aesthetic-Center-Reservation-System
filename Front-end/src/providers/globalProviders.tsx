@@ -63,7 +63,7 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
   const fetchSpecialists = async () => {
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff`);
-      const data = res.data;
+      const data = await res.data;
       setSpecialistMap(data);
     } catch (error) {
       console.error("Error fetching staff:", error);
