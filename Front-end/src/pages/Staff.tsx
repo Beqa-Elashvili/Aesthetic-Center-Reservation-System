@@ -35,7 +35,8 @@ function StaffPage() {
 
       setModalOpen(false);
       setStaffData({ firstName: "", lastName: "", photo: null });
-      fetchSpecialists();
+      const resp = await fetchSpecialists();
+      setFilteredStaff(resp);
     } catch (error) {
       console.error("Error adding staff:", error);
     }
@@ -62,7 +63,8 @@ function StaffPage() {
       setModalOpen(false);
       setSelectedStaff(null);
       setStaffData({ firstName: "", lastName: "", photo: null });
-      fetchSpecialists();
+      const resp = await fetchSpecialists();
+      setFilteredStaff(resp);
     } catch (error) {
       console.error("Error editing staff:", error);
     }

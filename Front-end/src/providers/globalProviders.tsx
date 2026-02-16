@@ -32,7 +32,7 @@ interface GlobalContextType {
   services: TService[];
   setSpecialistMap: Dispatch<SetStateAction<TSpecialist[]>>;
   setServices: (services: TService[]) => void;
-  fetchSpecialists: () => Promise<void>;
+  fetchSpecialists: () => Promise<TSpecialist[]>;
   fetchServices: () => Promise<void>;
   fetchReservations: () => Promise<void>;
   events: FCEventInput[];
@@ -65,6 +65,7 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/staff`);
       const data = await res.data;
       setSpecialistMap(data);
+      return data;
     } catch (error) {
       console.error("Error fetching staff:", error);
     }
