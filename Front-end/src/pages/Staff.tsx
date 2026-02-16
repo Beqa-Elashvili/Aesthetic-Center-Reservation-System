@@ -142,7 +142,19 @@ function StaffPage() {
 
       <div>
         {filteredStaff.map((staff) => (
-          <div className="stafMember" key={staff.id}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "8px",
+              padding: "4px",
+              border: "1px solid #eee",
+              borderRadius: "4px",
+            }}
+            className="stafMember"
+            key={staff.id}
+          >
             <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
               <img
                 src={`${import.meta.env.VITE_API_URL}${staff.photoUrl}`}

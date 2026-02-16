@@ -19,19 +19,17 @@ export const getStaff = async (req: Request, res: Response) => {
   res.json(staff);
 };
 
-// Add staff
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/"); // Make sure 'uploads/' folder exists
+    cb(null, "uploads/");
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname)); // unique file name
+    cb(null, Date.now() + path.extname(file.originalname));
   },
 });
 
 export const upload = multer({ storage });
 
-// Add staff
 export const addStaff = async (req: Request, res: Response) => {
   try {
     const { firstName, lastName } = req.body;
