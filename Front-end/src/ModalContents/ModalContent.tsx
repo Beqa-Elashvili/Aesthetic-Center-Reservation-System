@@ -7,13 +7,16 @@ import {
   Button,
   type UploadProps,
   type UploadFile,
+  Popconfirm,
+  type PopconfirmProps,
 } from "antd";
 import { MdOutlineAddAPhoto } from "react-icons/md";
 import { LuCalendarDays } from "react-icons/lu";
 import { IoTimeOutline } from "react-icons/io5";
-import { useGlobalContext } from "../providers/globalProviders";
+import axios from "axios";
 
 interface Service {
+  price: any;
   id: string;
   name: string;
   color?: string;
@@ -37,6 +40,8 @@ interface ModalComponentProps {
   setData: (newData: any) => void;
   specialists?: specialist[];
   services?: Service[];
+  editingReservationId?: string; // add editing reservation id
+  fetchReservations?: () => void; // optional refresh function
 }
 
 const ModalComponent: React.FC<ModalComponentProps> = ({
@@ -48,7 +53,22 @@ const ModalComponent: React.FC<ModalComponentProps> = ({
   setData,
   specialists = [],
   services = [],
+  editingReservationId,
+  fetchReservations,
 }) => {
+  const handleDeleteReservation = async () => {
+    if (!editingReservationId) return;
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_API_URL}/api/reservations/${editingReservationId}`,
+      );
+      onClose();
+      if (fetchReservations) await fetchReservations();
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting reservation");
+    }
+  };
   const uploadFile: UploadFile[] = data.photo
     ? [
         {
@@ -69,11 +89,33 @@ const ModalComponent: React.FC<ModalComponentProps> = ({
     onRemove: () => setData({ ...data, photo: null }),
   };
 
+  const totalPrice = () => {
+    const savedPrice = data.savedServices?.reduce(
+      (acc: any, s: { price: any }) => acc + (s.price || 0),
+      0,
+    );
+
+    const selectedPrice = data.selectedServices?.reduce(
+      (acc: any, id: string) => {
+        const service = services.find((s) => s.id === id);
+        return acc + (service?.price || 0);
+      },
+      0,
+    );
+
+    return (savedPrice || 0) + (selectedPrice || 0);
+  };
+  const cancel: PopconfirmProps["onCancel"] = (e) => {
+    console.log(e);
+  };
+
   return (
     <Modal
       title={
         type === "reservation"
-          ? "New Reservation"
+          ? editingReservationId
+            ? "Edit Reservation"
+            : "New Reservation"
           : type === "service"
             ? "New Service"
             : "Add Staff Member"
@@ -82,23 +124,30 @@ const ModalComponent: React.FC<ModalComponentProps> = ({
       onCancel={onClose}
       onOk={onSave}
       footer={
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: "10px",
-          }}
-        >
-          <Button
-            style={{ width: "100%", height: "40px" }}
-            type="primary"
-            onClick={onSave}
-          >
-            Save
-          </Button>
-          <Button style={{ width: "100%", height: "40px" }} onClick={onClose}>
-            Cancel
-          </Button>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {editingReservationId && (
+            <Popconfirm
+              title="Delete the task"
+              description="Are you sure to delete this task?"
+              onConfirm={handleDeleteReservation}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button danger>Delete</Button>
+            </Popconfirm>
+          )}
+          <div style={{ display: "flex", gap: "10px" }}>
+            <Button
+              style={{ flex: 1, height: "40px" }}
+              type="primary"
+              onClick={onSave}
+            >
+              Save
+            </Button>
+            <Button style={{ flex: 1, height: "40px" }} onClick={onClose}>
+              Cancel
+            </Button>
+          </div>
         </div>
       }
       okText="Save"
@@ -213,23 +262,28 @@ const ModalComponent: React.FC<ModalComponentProps> = ({
                     }}
                   >
                     {s.name}
-                    <span
-                      style={{
-                        marginLeft: "8px",
-                        cursor: "pointer",
-                        fontWeight: "bold",
-                      }}
-                      onClick={() => {
-                        setData({
-                          ...data,
-                          savedServices: data.savedServices.filter(
-                            (saved: any) => saved.id !== s.id,
-                          ),
-                        });
-                      }}
-                    >
-                      ×
-                    </span>
+                    <div>
+                      {s.price && (
+                        <span style={{ marginRight: "8px" }}>${s.price}</span>
+                      )}
+                      <span
+                        style={{
+                          marginLeft: "8px",
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                        }}
+                        onClick={() => {
+                          setData({
+                            ...data,
+                            savedServices: data.savedServices.filter(
+                              (saved: any) => saved.id !== s.id,
+                            ),
+                          });
+                        }}
+                      >
+                        ×
+                      </span>
+                    </div>
                   </span>
                 ))}
               </div>
@@ -254,27 +308,42 @@ const ModalComponent: React.FC<ModalComponentProps> = ({
                       }}
                     >
                       {s.name}
-                      <span
-                        style={{
-                          marginLeft: "8px",
-                          cursor: "pointer",
-                          fontWeight: "bold",
-                        }}
-                        onClick={() => {
-                          setData({
-                            ...data,
-                            selectedServices: data.selectedServices.filter(
-                              (id: string) => id !== s.id,
-                            ),
-                          });
-                        }}
-                      >
-                        ×
-                      </span>
+                      <div>
+                        {s.price && (
+                          <span style={{ marginRight: "8px" }}>${s.price}</span>
+                        )}
+                        <span
+                          style={{
+                            marginLeft: "8px",
+                            cursor: "pointer",
+                            fontWeight: "bold",
+                          }}
+                          onClick={() => {
+                            setData({
+                              ...data,
+                              selectedServices: data.selectedServices.filter(
+                                (id: string) => id !== s.id,
+                              ),
+                            });
+                          }}
+                        >
+                          ×
+                        </span>
+                      </div>
                     </span>
                   ))}
               </div>
             )}
+            <div
+              style={{
+                textAlign: "end",
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "black",
+              }}
+            >
+              Total: ${totalPrice()}:00
+            </div>
           </div>
         </div>
       )}

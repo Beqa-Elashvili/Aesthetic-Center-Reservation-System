@@ -5,16 +5,13 @@ import interactionPlugin from "@fullcalendar/interaction";
 import axios from "axios";
 import ModalComponent from "../ModalContents/ModalContent";
 import { useGlobalContext } from "../providers/globalProviders";
-import type {
-  DateSelectArg,
-  EventInput as FCEventInput,
-} from "@fullcalendar/core";
+import type { DateSelectArg } from "@fullcalendar/core";
 
 const SchedulePage: React.FC = () => {
   const { specialists, services } = useGlobalContext();
 
-  const [events, setEvents] = useState<FCEventInput[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const { fetchReservations, events, setEvents } = useGlobalContext();
 
   const [selectedSlot, setSelectedSlot] = useState<DateSelectArg | null>(null);
   const [selectedSpecialist, setSelectedSpecialist] = useState<string>("");
@@ -25,32 +22,7 @@ const SchedulePage: React.FC = () => {
     string | null
   >(null);
 
-  // ================= FETCH RESERVATIONS =================
-  const fetchReservations = async () => {
-    try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/reservations`,
-      );
-      const eventsFromBackend: FCEventInput[] = res.data.map((r: any) => ({
-        id: r.id,
-        title: r.Services?.map((s: any) => s.name).join(", ") || "No Service",
-        start: `${r.date}T${r.startTime}`,
-        end: `${r.date}T${r.endTime}`,
-        resourceId: r.specialistId,
-        backgroundColor: r.Services?.[0]?.color || "#3788d8",
-        rawData: r,
-      }));
-      setEvents(eventsFromBackend);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    fetchReservations();
-  }, []);
-
-  // ================= CREATE / EDIT RESERVATION =================
+  // = CREATE / EDIT RESERVATION =
   const handleDateSelect = (selectInfo: DateSelectArg) => {
     setEditingReservationId(null);
     setSelectedSlot(selectInfo);
@@ -116,7 +88,7 @@ const SchedulePage: React.FC = () => {
               .padStart(2, "0")}`,
             endTime,
             specialistId: selectedSpecialist,
-            services: allServiceIds, // only IDs
+            services: allServiceIds,
             duration,
           },
         );
@@ -128,7 +100,7 @@ const SchedulePage: React.FC = () => {
             .padStart(2, "0")}`,
           endTime,
           specialistId: selectedSpecialist,
-          services: allServiceIds, // only IDs
+          services: allServiceIds,
           duration,
         });
       }
@@ -141,9 +113,10 @@ const SchedulePage: React.FC = () => {
       setSavedServices([]);
       setDuration(30);
       await fetchReservations();
-    } catch (err) {
-      console.error(err);
-      alert("Error saving reservation");
+    } catch (err: unknown) {
+      alert(
+        (err as any)?.response?.data?.message || "Error saving reservation",
+      );
     }
   };
 
@@ -202,6 +175,8 @@ const SchedulePage: React.FC = () => {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
+        fetchReservations={fetchReservations}
+        editingReservationId={editingReservationId || undefined}
         data={{
           selectedSpecialist,
           selectedSlot,

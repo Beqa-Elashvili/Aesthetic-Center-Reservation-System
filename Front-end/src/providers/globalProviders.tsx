@@ -8,6 +8,7 @@ import React, {
   type Dispatch,
 } from "react";
 import axios from "axios";
+import type { EventInput as FCEventInput } from "@fullcalendar/core";
 
 export interface TSpecialist {
   id: string;
@@ -33,6 +34,9 @@ interface GlobalContextType {
   setServices: (services: TService[]) => void;
   fetchSpecialists: () => Promise<void>;
   fetchServices: () => Promise<void>;
+  fetchReservations: () => Promise<void>;
+  events: FCEventInput[];
+  setEvents: React.Dispatch<React.SetStateAction<FCEventInput[]>>;
 }
 
 const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
@@ -42,6 +46,7 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [specialists, setSpecialistMap] = useState<TSpecialist[]>([]);
   const [services, setServices] = useState<TService[]>([]);
+  const [events, setEvents] = useState<FCEventInput[]>([]);
 
   const fetchServices = async () => {
     try {
@@ -65,15 +70,39 @@ export const GlobalProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
+  const fetchReservations = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/reservations`,
+      );
+      const eventsFromBackend: FCEventInput[] = res.data.map((r: any) => ({
+        id: r.id,
+        title: r.Services?.map((s: any) => s.name).join(", ") || "No Service",
+        start: `${r.date}T${r.startTime}`,
+        end: `${r.date}T${r.endTime}`,
+        resourceId: r.specialistId,
+        backgroundColor: r.Services?.[0]?.color || "#3788d8",
+        rawData: r,
+      }));
+      setEvents(eventsFromBackend);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     fetchServices();
     fetchSpecialists();
+    fetchReservations();
   }, []);
 
   return (
     <GlobalContext.Provider
       value={{
         specialists,
+        fetchReservations,
+        events,
+        setEvents,
         services,
         setSpecialistMap,
         setServices,
