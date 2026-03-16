@@ -1,7 +1,5 @@
-// src/controllers/serviceController.ts
 import { Request, Response } from "express";
 import { Service } from "@/models/service/Service";
-import { ServiceCustomField } from "@/models/service/CustomFieldsService";
 
 // Get all services
 export const getServices = async (req: Request, res: Response) => {
